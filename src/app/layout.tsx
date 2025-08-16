@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { ThirdwebProvider } from "thirdweb/react";
 
-const inter = Inter({ subsets: ["latin"] });
+const geist = GeistSans;
+const geistMono = GeistMono;
 
 export const metadata: Metadata = {
   title: "thirdweb SDK + Next starter",
@@ -18,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${geist.variable} ${geistMono.variable}`}>
         <ThirdwebProvider>
           <ThemeProvider>
             {children}

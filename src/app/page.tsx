@@ -312,6 +312,33 @@ function AnimatedStat(props: { label: string; value?: number; suffix?: string; f
   );
 }
 
+// Always-animated NumberFlow that never shows a dash; holds previous value until next is ready
+function AnimatedExpectedProfit(props: { value?: number; active: boolean }) {
+  const { value, active } = props;
+  const [display, setDisplay] = useState<number>(0);
+  const [hasInit, setHasInit] = useState(false);
+
+  useEffect(() => {
+    if (value === undefined || Number.isNaN(value)) return; // keep previous value to avoid flicker
+    setDisplay(value);
+    setHasInit(true);
+  }, [value]);
+
+  return (
+    <NumberFlow
+      value={hasInit ? display : 0}
+      format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
+      className="text-5xl font-medium leading-tight"
+      style={{ color: active ? "#a78bfa" : "#9ca3af" }}
+      transformTiming={{ duration: 600, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }}
+      spinTiming={{ duration: 900, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }}
+      opacityTiming={{ duration: 300, easing: "ease-out" }}
+      trend={value !== undefined ? (value >= (display ?? 0) ? 1 : -1) : 0}
+      willChange
+    />
+  );
+}
+
 function AnimatedChart({ isActive, returnValue, color = "purple" }: { isActive: boolean; returnValue: number; color?: string }) {
   const [isAnimating, setIsAnimating] = useState(false);
   useEffect(() => { setIsAnimating(isActive); }, [isActive]);
@@ -475,21 +502,10 @@ function MinimalStakingCard(props: {
         <div className="relative z-10 text-center mb-6">
           <p className="text-sm mb-2 text-zinc-600">Expected Profit</p>
           <div className="mb-1">
-        {projectedProfitNum === undefined ? (
-              <span className="text-4xl font-medium leading-tight text-zinc-400">-</span>
-            ) : (
-              <NumberFlow
-                value={projectedProfitNum}
-                format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
-                className="text-4xl font-medium leading-tight"
-                style={{ color: depositAmount > 0n ? "#a78bfa" : "#9ca3af" }}
-                transformTiming={{ duration: 600, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }}
-                spinTiming={{ duration: 900, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }}
-                opacityTiming={{ duration: 300, easing: "ease-out" }}
-                trend={1}
-                willChange
-              />
-            )}
+            <AnimatedExpectedProfit
+              value={projectedProfitNum}
+              active={depositAmount > 0n}
+            />
           </div>
           <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">$DEGEN</p>
         </div>
