@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0b0b12;
+  --fg: #0b0b12;
+}
+
+html.dark body {
+  background: radial-gradient(1200px 600px at 10% -10%, rgba(124, 58, 237, 0.25), transparent),
+    radial-gradient(1200px 600px at 90% 110%, rgba(139, 92, 246, 0.2), transparent),
+    var(--bg);
+  color: #e5e7eb;
+}
+
+html:not(.dark) body {
+  background: radial-gradient(1200px 600px at -10% -10%, rgba(124, 58, 237, 0.08), transparent),
+    radial-gradient(1200px 600px at 110% 110%, rgba(139, 92, 246, 0.08), transparent),
+    #f8fafc;
+  color: #0b1220;
+}
+
+.btn-primary {
+  @apply bg-primary text-white rounded-md px-4 py-2 hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed;
+}
+
+.btn-outline {
+  @apply border border-primary text-primary rounded-md px-4 py-2 hover:bg-primary/10;
+}
+
+.card {
+  @apply border rounded-xl p-5 backdrop-blur;
+}
+.dark .card { @apply border-zinc-800/60 bg-black/30; }
+html:not(.dark) .card { @apply border-zinc-200 bg-white/70; }
+
+:root {
+	line-height: 1.5;
+	font-weight: 400;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	font-family: 'Inter', sans-serif;
+	font-optical-sizing: auto;
+	font-style: normal;
+	font-variation-settings: 'slnt' 0;
+}
+
+/* Remove base layer body override to avoid conflicting background */
+
+/* Use tabular numbers for smoother digit transitions */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Optional: subtle mask size tweaks for NumberFlow */
+:root {
+  --number-flow-mask-height: .3em;
+  --number-flow-mask-width: .6em;
+}
