@@ -22,6 +22,9 @@ export default function Home() {
 }
 
 function TopHeader() {
+  const account = useActiveAccount();
+  const address = account?.address as `0x${string}` | undefined;
+  const short = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Not connected";
   return (
     <header className="flex items-center gap-4">
       <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 overflow-hidden grid place-items-center">
@@ -29,7 +32,7 @@ function TopHeader() {
       </div>
       <div className="leading-tight">
         <div className="text-sm text-white/70">GM Degen</div>
-        <div className="text-lg font-semibold">@maxbrych.eth</div>
+        <div className="text-lg font-semibold">{short}</div>
       </div>
     </header>
   );
@@ -88,18 +91,21 @@ function StakingPlans() {
   ];
 
   return (
-    <section className="mt-6 grid gap-4">
-      {planMeta.map((p) => (
-        <PlanCard
-          key={p.idx}
-          i={p.idx}
-          title={p.title}
-          illus={p.illus}
-          color={p.color}
-          investMin={investMin.data}
-          address={address}
-        />
-      ))}
+    <section className="mt-6">
+      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-1 -mx-5 px-5">
+        {planMeta.map((p) => (
+          <div key={p.idx} className="snap-center w-[88%] flex-shrink-0">
+            <PlanCard
+              i={p.idx}
+              title={p.title}
+              illus={p.illus}
+              color={p.color}
+              investMin={investMin.data}
+              address={address}
+            />
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -134,9 +140,12 @@ function PlanCard({ i, title, illus, color, investMin, address }: { i: 0|1|2; ti
   const snoozeAt = () => { const tx = prepareContractCall({ contract: stakerContract, method: "function snoozeAt(uint256,uint256)", params: [BigInt(Number(snoozeIndex || "0")), BigInt(Number(snoozeDays || "1"))] }); sendTx(tx); };
 
   const isActive = depositAmount > 0n && (projectedProfitNum ?? 0) > 0;
+  const containerClass = isActive
+    ? "border border-white/10 bg-[linear-gradient(180deg,#240077_0%,#854CFE_100%)]"
+    : "border border-transparent bg-[#3B2887]";
 
   return (
-    <div className="relative rounded-3xl p-6 border border-white/10 bg-gradient-to-b from-[#3a1e8a]/60 to-[#5b2bbd]/60 shadow-[0_10px_40px_rgba(124,58,237,.25)] overflow-hidden">
+    <div className={`relative rounded-3xl p-6 shadow-[0_10px_40px_rgba(124,58,237,.15)] overflow-hidden ${containerClass}`}>
       <div className="absolute -right-6 -bottom-10 opacity-60 select-none pointer-events-none">
         <Image src={illus} alt="plan" width={210} height={210} />
       </div>
@@ -229,27 +238,37 @@ function DepositTimers() {
         <div className="text-white/60 text-sm">No active deposits yet.</div>
       )}
       {topThree.map((d, i) => (
-        <TimerCard key={i} amountLabel={`${formatIf(d.profit)} $DEGEN`} finish={d.finish} illusIndex={i} />
+        <TimerCard key={i} planIndex={Number(d.plan)} amount={d.profit} finish={d.finish} />
       ))}
     </section>
   );
 }
 
-function TimerCard({ amountLabel, finish, illusIndex }: { amountLabel: string; finish: bigint; illusIndex: number }) {
+function TimerCard({ planIndex, amount, finish }: { planIndex: number; amount: bigint; finish: bigint }) {
   const timeLeft = formatTimeLeft(finish);
-  const illus = ["/illus/plan01.png", "/illus/plan02.png", "/illus/plan03.png"][illusIndex % 3];
+  const illus = ["/illus/plan01.png", "/illus/plan02.png", "/illus/plan03.png"][planIndex % 3];
+  const isMature = Number(finish) <= Math.floor(Date.now() / 1000);
+  const { mutate: sendTx } = useSendTransaction();
+  const withdraw = () => {
+    const tx = prepareContractCall({ contract: stakerContract, method: "function withdraw()", params: [] });
+    sendTx(tx);
+  };
   return (
-    <div className="relative rounded-3xl p-5 bg-white/5 border border-white/10 overflow-hidden">
+    <div className="relative rounded-3xl p-5 bg-[#2C1E72] border border-white/10 overflow-hidden">
       <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-70">
         <Image src={illus} alt="chips" width={110} height={110} />
       </div>
       <div className="relative z-10">
         <div className="text-white/70">Time remaining</div>
-        <div className="text-3xl font-semibold mt-1">{amountLabel}</div>
-        <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/15 px-4 py-2">
-          <Clock className="w-4 h-4" />
-          <span className="font-mono">{timeLeft}</span>
-        </div>
+        <div className="text-3xl font-semibold mt-1">{formatUnits(amount, 18)} $DEGEN</div>
+        {isMature ? (
+          <button onClick={withdraw} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-white text-purple-900 font-semibold px-4 py-2">Withdraw</button>
+        ) : (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/15 px-4 py-2">
+            <Clock className="w-4 h-4" />
+            <span className="font-mono">{timeLeft}</span>
+          </div>
+        )}
       </div>
     </div>
   );
