@@ -7,7 +7,7 @@ import { formatUnits, parseUnits, zeroAddress } from "viem";
 import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
 import { STAKER_ADDRESS, stakerContract, degenContract } from "./config";
 import NumberFlow from "@number-flow/react";
-import { ChevronDown, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import { NumericFormat } from "react-number-format";
 
 export default function Home() {
@@ -46,9 +46,7 @@ function TopStats() {
     <section className="mt-6 grid grid-cols-2 gap-4">
       <div className="rounded-2xl bg-white/5 border border-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_10px_30px_rgba(124,58,237,.15)]">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-purple-600/30 border border-white/10 grid place-items-center">
-            <Image src="/icons/staked_icon.png" alt="staked" width={28} height={28} />
-          </div>
+          <Image src="/icons/staked_icon.png" alt="staked" width={28} height={28} />
           <div>
             <div className="text-sm text-white/70">Total Stackd</div>
             <div className="text-xl font-semibold font-mono">
@@ -61,9 +59,7 @@ function TopStats() {
       </div>
       <div className="rounded-2xl bg-white/5 border border-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_10px_30px_rgba(124,58,237,.15)]">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-purple-600/30 border border-white/10 grid place-items-center">
-            <Image src="/icons/investors_icon.png" alt="investors" width={28} height={28} />
-          </div>
+          <Image src="/icons/investors_icon.png" alt="investors" width={28} height={28} />
           <div>
             <div className="text-sm text-white/70">Investors</div>
             <div className="text-xl font-semibold font-mono">
@@ -85,9 +81,9 @@ function StakingPlans() {
   const address = account?.address as `0x${string}` | undefined;
   const investMin = useReadContract({ contract: stakerContract, method: "function INVEST_MIN_AMOUNT() view returns (uint256)", params: [] });
   const planMeta: Array<{ idx: 0|1|2; title: string; illus: string; color: "blue"|"purple"|"gold" }> = [
-    { idx: 0, title: "Lucky Stack", illus: "/illus/plan01.png", color: "blue" },
-    { idx: 1, title: "Hot Streak", illus: "/illus/plan02.png", color: "purple" },
-    { idx: 2, title: "Royal Flush", illus: "/illus/plan03.png", color: "gold" },
+    { idx: 0, title: "Low Risk", illus: "/illus/plan01.png", color: "blue" },
+    { idx: 1, title: "Medium Risk", illus: "/illus/plan02.png", color: "purple" },
+    { idx: 2, title: "High Risk", illus: "/illus/plan03.png", color: "gold" },
   ];
 
   return (
@@ -187,33 +183,6 @@ function PlanCard({ i, title, illus, color, investMin, address }: { i: 0|1|2; ti
         <div className="grid grid-cols-1 gap-3 mt-4">
           <button onClick={approveThenInvest} disabled={isPending || depositAmount <= 0n} className="rounded-xl bg-white text-purple-900 font-semibold py-3 disabled:opacity-60">Invest</button>
           <button onClick={withdraw} disabled={isPending} className="rounded-xl bg-white/10 border border-white/20 font-semibold py-3">Withdraw</button>
-        </div>
-
-        <div className="mt-4">
-          <button onClick={() => setShowMore((v) => !v)} className="flex items-center gap-2 text-sm font-medium text-white/80">
-            <ChevronDown className={`w-4 h-4 transition-transform ${showMore ? "rotate-180" : ""}`} />
-            Advanced options
-          </button>
-          {showMore && (
-            <div className="mt-3 p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
-              <div>
-                <label className="block text-xs mb-1 text-white/70">Extend Lock Period (days)</label>
-                <div className="flex gap-2">
-                  <NumericFormat value={snoozeDays} onValueChange={(v) => setSnoozeDays(v.value)} decimalScale={0} allowNegative={false} className="flex-1 rounded-lg bg-white/10 border border-white/20 px-3 py-2" />
-                  <button onClick={snoozeAll} className="px-3 py-2 rounded-lg bg-white/10 border border-white/20">Snooze</button>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs mb-1 text-white/70">Index</label>
-                  <NumericFormat value={snoozeIndex} onValueChange={(v) => setSnoozeIndex(v.value)} decimalScale={0} allowNegative={false} className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2" />
-                </div>
-                <div className="flex items-end">
-                  <button onClick={snoozeAt} className="w-full rounded-lg bg-white/10 border border-white/20 py-2">Snooze At</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -354,7 +323,7 @@ function AnimatedExpectedProfit(props: { value?: number; active: boolean }) {
     <NumberFlow
       value={hasInit ? display : 0}
       format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
-      className="text-5xl font-medium leading-tight"
+      className="text-5xl font-medium tracking-tight leading-tight"
       style={{ color: active ? "#a78bfa" : "#9ca3af" }}
       transformTiming={{ duration: 600, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }}
       spinTiming={{ duration: 900, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }}
