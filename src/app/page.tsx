@@ -15,7 +15,7 @@ export default function Home() {
     <main className="min-h-screen px-5 py-6 bg-gradient-to-b from-[#1a0b4d] via-[#1a0b4d] to-[#220d60] text-white">
       <TopHeader />
       <TopStats />
-      <GrowthPlanCard />
+      <StakingPlans />
       <DepositTimers />
     </main>
   );
@@ -77,50 +77,50 @@ function TopStats() {
 
 // Removed global Actions; actions now in each plan card
 
-function GrowthPlanCard() {
+function StakingPlans() {
   const account = useActiveAccount();
   const address = account?.address as `0x${string}` | undefined;
   const investMin = useReadContract({ contract: stakerContract, method: "function INVEST_MIN_AMOUNT() view returns (uint256)", params: [] });
-  // Growth plan is index 1 in the original design
-  const plan = useReadContract({ contract: stakerContract, method: "function getPlanInfo(uint8) view returns (uint256,uint256)", params: [1] });
+  const planMeta: Array<{ idx: 0|1|2; title: string; illus: string; color: "blue"|"purple"|"gold" }> = [
+    { idx: 0, title: "Lucky Stack", illus: "/illus/plan01.png", color: "blue" },
+    { idx: 1, title: "Hot Streak", illus: "/illus/plan02.png", color: "purple" },
+    { idx: 2, title: "Royal Flush", illus: "/illus/plan03.png", color: "gold" },
+  ];
 
+  return (
+    <section className="mt-6 grid gap-4">
+      {planMeta.map((p) => (
+        <PlanCard
+          key={p.idx}
+          i={p.idx}
+          title={p.title}
+          illus={p.illus}
+          color={p.color}
+          investMin={investMin.data}
+          address={address}
+        />
+      ))}
+    </section>
+  );
+}
+
+function PlanCard({ i, title, illus, color, investMin, address }: { i: 0|1|2; title: string; illus: string; color: "blue"|"purple"|"gold"; investMin?: bigint; address?: `0x${string}` }) {
+  const plan = useReadContract({ contract: stakerContract, method: "function getPlanInfo(uint8) view returns (uint256,uint256)", params: [i] });
   const [amount, setAmount] = useState<string>("");
   const depositAmount = useMemo(() => {
-    try {
-      return parseUnits(amount && amount.length > 0 ? amount : "0", 18);
-    } catch {
-      return 0n;
-    }
+    try { return parseUnits(amount && amount.length > 0 ? amount : "0", 18); } catch { return 0n; }
   }, [amount]);
-
-  const result = useReadContract({
-    contract: stakerContract,
-    method: "function getResult(uint8,uint256) view returns (uint256,uint256,uint256,uint256)",
-    params: [1, depositAmount],
-  });
-
+  const result = useReadContract({ contract: stakerContract, method: "function getResult(uint8,uint256) view returns (uint256,uint256,uint256,uint256)", params: [i, depositAmount] });
   const { mutate: sendTx, isPending } = useSendTransaction();
 
   const approveThenInvest = async () => {
     if (!address || depositAmount <= 0n) return;
-    const approve = prepareContractCall({
-      contract: degenContract,
-      method: "function approve(address spender, uint256 amount) returns (bool)",
-      params: [STAKER_ADDRESS, depositAmount],
-    });
-    const invest = prepareContractCall({
-      contract: stakerContract,
-      method: "function invest(address referrer, uint8 plan, uint256 amount)",
-      params: ["0x0000000000000000000000000000000000000000", 1, depositAmount],
-    });
+    const approve = prepareContractCall({ contract: degenContract, method: "function approve(address spender, uint256 amount) returns (bool)", params: [STAKER_ADDRESS, depositAmount] });
+    const invest = prepareContractCall({ contract: stakerContract, method: "function invest(address referrer, uint8 plan, uint256 amount)", params: ["0x0000000000000000000000000000000000000000", i, depositAmount] });
     await new Promise<void>((resolve, reject) => sendTx(approve, { onSuccess: () => resolve(), onError: reject }));
     await new Promise<void>((resolve, reject) => sendTx(invest, { onSuccess: () => resolve(), onError: reject }));
   };
-
-  const withdraw = () => {
-    const tx = prepareContractCall({ contract: stakerContract, method: "function withdraw()", params: [] });
-    sendTx(tx);
-  };
+  const withdraw = () => { const tx = prepareContractCall({ contract: stakerContract, method: "function withdraw()", params: [] }); sendTx(tx); };
 
   const time = plan.data ? Number(plan.data[0]) : undefined;
   const percent = plan.data ? Number(plan.data[1]) : undefined; // per 1000 per day
@@ -130,29 +130,28 @@ function GrowthPlanCard() {
   const [showMore, setShowMore] = useState(false);
   const [snoozeDays, setSnoozeDays] = useState<string>("1");
   const [snoozeIndex, setSnoozeIndex] = useState<string>("0");
+  const snoozeAll = () => { const tx = prepareContractCall({ contract: stakerContract, method: "function snoozeAll(uint256)", params: [BigInt(Number(snoozeDays || "1"))] }); sendTx(tx); };
+  const snoozeAt = () => { const tx = prepareContractCall({ contract: stakerContract, method: "function snoozeAt(uint256,uint256)", params: [BigInt(Number(snoozeIndex || "0")), BigInt(Number(snoozeDays || "1"))] }); sendTx(tx); };
 
-  const snoozeAll = () => {
-    const tx = prepareContractCall({ contract: stakerContract, method: "function snoozeAll(uint256)", params: [BigInt(Number(snoozeDays || "1"))] });
-    sendTx(tx);
-  };
-  const snoozeAt = () => {
-    const tx = prepareContractCall({ contract: stakerContract, method: "function snoozeAt(uint256,uint256)", params: [BigInt(Number(snoozeIndex || "0")), BigInt(Number(snoozeDays || "1"))] });
-    sendTx(tx);
-  };
+  const isActive = depositAmount > 0n && (projectedProfitNum ?? 0) > 0;
 
   return (
-    <section className="mt-6 relative">
-      <div className="relative rounded-3xl p-6 border border-white/10 bg-gradient-to-b from-[#3a1e8a]/60 to-[#5b2bbd]/60 shadow-[0_10px_40px_rgba(124,58,237,.25)] overflow-hidden">
-        <div className="absolute -right-6 -bottom-10 opacity-60 select-none pointer-events-none">
-          <Image src="/illus/plan02.png" alt="growth" width={210} height={210} />
+    <div className="relative rounded-3xl p-6 border border-white/10 bg-gradient-to-b from-[#3a1e8a]/60 to-[#5b2bbd]/60 shadow-[0_10px_40px_rgba(124,58,237,.25)] overflow-hidden">
+      <div className="absolute -right-6 -bottom-10 opacity-60 select-none pointer-events-none">
+        <Image src={illus} alt="plan" width={210} height={210} />
+      </div>
+      {isActive && (
+        <div className="absolute inset-0 pointer-events-none">
+          <AnimatedChart isActive={isActive} returnValue={projectedProfitNum ?? 0} color={color} />
         </div>
-
+      )}
+      <div className="relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 grid place-items-center">
-            <Image src="/illus/plan02.png" alt="icon" width={28} height={28} />
+          <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 grid place-items-center overflow-hidden">
+            <Image src={illus} alt="icon" width={28} height={28} />
           </div>
           <div>
-            <div className="text-xl font-semibold">Growth Plan</div>
+            <div className="text-xl font-semibold">{title}</div>
             <div className="text-white/70 text-sm">{dailyRateValue ?? "-"}% daily • {time ?? "-"} days</div>
           </div>
         </div>
@@ -208,7 +207,7 @@ function GrowthPlanCard() {
           )}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
